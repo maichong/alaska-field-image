@@ -10,7 +10,7 @@ import FlatButton from 'material-ui/lib/flat-button';
 import FontIcon from 'material-ui/lib/font-icon';
 import * as _ from 'lodash';
 import { shallowEqual } from 'alaska-admin-view';
-import api from 'alaska-admin-view/lib/utils/api';
+import { api } from 'alaska-admin-view';
 import { stringify } from 'qs';
 
 
