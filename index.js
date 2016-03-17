@@ -6,12 +6,12 @@
 
 'use strict';
 
-const fs = require('mz/fs');
 const alaska = require('alaska');
+const fs = require('fs');
+const path = require('path');
 const moment = require('moment');
 const mime = require('mime');
-const co = require('co');
-const mkdirp = require('mkdirp-then');
+const mkdirp = require('mkdirp');
 const mongoose = require('mongoose');
 const ObjectId = mongoose.Types.ObjectId;
 
@@ -78,6 +78,10 @@ exports.initSchema = function (field, schema, Model) {
     field.prefix = '';
   }
 
+  if (!field.allowed) {
+    field.allowed = ['jpg', 'png', 'gif'];
+  }
+
   Model.underscoreMethod(field.path, 'upload', function (file) {
     let record = this;
     return field.type.upload(file, field).then(function (img) {
@@ -100,53 +104,112 @@ exports.initSchema = function (field, schema, Model) {
 exports.viewOptions = function (field, Model) {
   let options = alaska.Field.viewOptions.apply(this, arguments);
   options.multi = field.multi;
+  options.allowed = field.allowed;
   return options;
 };
 
 /**
  * 上传
- * @param file
- * @param field
+ * @param {File|string|Buffer} file
+ * @param {Field} field
+ * @returns {{}}
  */
 exports.upload = function (file, field) {
-  return co(function * () {
+  return new Promise(function (resolve, reject) {
     if (!file) {
-      alaska.error('File not found');
+      return reject(new Error('File not found'));
     }
-    if (!/\.(jpg|jpeg|png)/i.test(file.filename)) {
-      alaska.error('Image format error');
-    }
-    let buffer = yield fs.readFile(file.path);
+    let name = file.filename || '';
+    let ext = file.ext;
+    let mimeType = file.mime || file.mimeType;
+    let filePath;
+    let buffer;
     let local = field.dir;
     let dir = field.dir;
     let url = field.prefix;
     let id = new ObjectId();
     let img = {
       _id: id,
-      ext: mime.extension(file.mime || file.mimeType).replace('jpeg', 'jpg'),
-      size: buffer.length,
+      ext: '',
+      size: 0,
       path: '',
       thumbUrl: '',
       url: '',
-      name: file.filename
+      name: ''
     };
-    if (field.pathFormat) {
-      img.path += moment().format(field.pathFormat);
+
+    if (Buffer.isBuffer(file)) {
+      //文件数据
+      if (!mimeType) {
+        mimeType = 'image/jpeg';
+      }
+    } else if (typeof file === 'string') {
+      //文件路径
+      mimeType = mime.lookup(file);
+      name = path.basename(file);
+      filePath = file;
+    } else if (file.path) {
+      //上传文件
+      filePath = file.path;
+    } else {
+      return reject(new Error('Unknown image file'));
     }
-    dir += img.path;
-    img.path += id.toString() + '.' + img.ext;
-    local += img.path;
-    url += img.path;
-    img.url = url;
-    img.thumbUrl = url;
 
-    let exists = yield fs.exists(dir);
-    if (!exists) {
-      yield mkdirp(dir);
+    if (!ext) {
+      ext = mime.extension(mimeType).replace('jpeg', 'jpg');
+    }
+    if (field.allowed.indexOf(ext) < 0) {
+      return reject(new Error('Image format error'));
     }
 
-    yield fs.writeFile(local, buffer);
+    if (filePath) {
+      fs.readFile(file.path, onReadFile);
+    } else {
+      onReadFile(null, file);
+    }
 
-    return img;
+
+    function onReadFile(error, data) {
+      if (error) {
+        return reject(error);
+      }
+      buffer = data;
+      img.ext = ext;
+      img.size = data.length;
+      img.name = name;
+
+      if (field.pathFormat) {
+        img.path += moment().format(field.pathFormat);
+      }
+      dir += img.path;
+      img.path += id.toString() + '.' + img.ext;
+      local += img.path;
+      url += img.path;
+      img.url = url;
+      img.thumbUrl = url;
+
+      fs.stat(dir, function (e) {
+        if (e) {
+          //文件夹不存在
+          mkdirp(dir, function (error) {
+            if (error) {
+              return reject(error);
+            }
+            writeFile();
+          });
+        } else {
+          writeFile();
+        }
+      });
+    }
+
+    function writeFile() {
+      fs.writeFile(local, buffer, function (error) {
+        if (error) {
+          return reject(error);
+        }
+        resolve(img);
+      });
+    }
   });
 };

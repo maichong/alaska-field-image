@@ -11,7 +11,7 @@ import FontIcon from 'material-ui/lib/font-icon';
 import * as _ from 'lodash';
 import { shallowEqual } from 'alaska-admin-view';
 import api from 'alaska-admin-view/lib/utils/api';
-import {stringify} from 'qs';
+import { stringify } from 'qs';
 
 
 export default class ImageFieldView extends React.Component {
@@ -58,12 +58,6 @@ export default class ImageFieldView extends React.Component {
     };
   }
 
-  componentWillMount() {
-  }
-
-  componentDidMount() {
-  }
-
   componentWillReceiveProps(nextProps, nextContext) {
     let newState = {};
     if (nextContext.muiTheme) {
@@ -79,9 +73,6 @@ export default class ImageFieldView extends React.Component {
       }
     }
     this.setState(newState);
-  }
-
-  componentWillUnmount() {
   }
 
   handleRemoveItem(item) {
@@ -119,14 +110,14 @@ export default class ImageFieldView extends React.Component {
       errorText: ''
     };
     _.each(this.refs.imageInput.files, file => {
-      if (value.length >= me.state.max) {
+      if (value.length >= me.state.max || !file) {
         return;
       }
-      if (file && !/\.(jpg|jpeg|png)$/i.test(file.name)) {
+      let matchs = file.name.match(/\.(\w+)$/);
+      if (!matchs || !matchs[1] || field.allowed.indexOf(matchs[1].replace('jpeg', 'jpg').toLowerCase()) < 0) {
         nextState.errorText = '图片格式不允许';
         return;
       }
-
       api.post(url, {
         id: data._id == '_new' ? '' : data._id,
         path: field.path,
@@ -134,6 +125,8 @@ export default class ImageFieldView extends React.Component {
       }).then(function (res) {
         value.push(res);
         me.props.onChange && me.props.onChange(multi ? value : res);
+      }, function (error) {
+        me.setState({ errorText: error.message });
       });
     });
     this.setState(nextState);
@@ -197,8 +190,8 @@ export default class ImageFieldView extends React.Component {
     return styles;
   }
 
-  shouldComponentUpdate(props) {
-    return !shallowEqual(props, this.props, 'data', 'onChange', 'model');
+  shouldComponentUpdate(props, state) {
+    return !shallowEqual(props, this.props, 'data', 'onChange', 'model') || !shallowEqual(state, this.state);
   }
 
   render() {
