@@ -15,7 +15,72 @@ const mkdirp = require('mkdirp');
 const mongoose = require('mongoose');
 const ObjectId = mongoose.Types.ObjectId;
 
-exports.views = {
+class ImageField extends alaska.Field {
+  initSchema() {
+    let field = this;
+    let schema = this._schema;
+    let defaultValue = field.default || {};
+
+    let paths = {};
+
+    function addPath(path, type) {
+      let options = { type };
+      if (defaultValue[path] !== undefined) {
+        options.default = defaultValue[path];
+      }
+      paths[path] = options;
+    }
+
+    addPath('_id', mongoose.Schema.Types.ObjectId);
+    addPath('ext', String);
+    addPath('path', String);
+    addPath('url', String);
+    addPath('thumbUrl', String);
+    addPath('name', String);
+    addPath('size', Number);
+
+    let imageSchema = new mongoose.Schema(paths);
+
+    if (field.multi) {
+      imageSchema = [imageSchema];
+    }
+
+    schema.add({
+      [field.path]: imageSchema
+    });
+
+    if (!field.dir) {
+      field.dir = '';
+    }
+
+    if (!field.pathFormat) {
+      field.pathFormat = '';
+    }
+
+    if (!field.prefix) {
+      field.prefix = '';
+    }
+
+    if (!field.allowed) {
+      field.allowed = ['jpg', 'png', 'gif'];
+    }
+
+    this.underscoreMethod('upload', function (file) {
+      let record = this;
+      return ImageField.upload(file, field).then(function (img) {
+        record.set(field.path, img);
+        return Promise.resolve();
+      });
+    });
+
+    this.underscoreMethod('data', function () {
+      let value = this.get(field.path);
+      return value && value.url ? value.url : '';
+    });
+  }
+}
+
+ImageField.views = {
   cell: {
     name: 'ImageFieldCell',
     field: __dirname + '/lib/cell.js'
@@ -26,87 +91,9 @@ exports.views = {
   }
 };
 
-exports.plain = mongoose.Schema.Types.Mixed;
+ImageField.plain = mongoose.Schema.Types.Mixed;
 
-/**
- * 初始化Schema
- * @param field   alaksa.Model中的字段配置
- * @param schema
- * @param Model
- */
-exports.initSchema = function (field, schema, Model) {
-
-  let defaultValue = field.default || {};
-
-  let paths = {};
-
-  function addPath(path, type) {
-    let options = { type };
-    if (defaultValue[path] !== undefined) {
-      options.default = defaultValue[path];
-    }
-    paths[path] = options;
-  }
-
-  addPath('_id', mongoose.Schema.Types.ObjectId);
-  addPath('ext', String);
-  addPath('path', String);
-  addPath('url', String);
-  addPath('thumbUrl', String);
-  addPath('name', String);
-  addPath('size', Number);
-
-  let imageSchema = new mongoose.Schema(paths);
-
-  if (field.multi) {
-    imageSchema = [imageSchema];
-  }
-
-  schema.add({
-    [field.path]: imageSchema
-  });
-
-  if (!field.dir) {
-    field.dir = '';
-  }
-
-  if (!field.pathFormat) {
-    field.pathFormat = '';
-  }
-
-  if (!field.prefix) {
-    field.prefix = '';
-  }
-
-  if (!field.allowed) {
-    field.allowed = ['jpg', 'png', 'gif'];
-  }
-
-  Model.underscoreMethod(field.path, 'upload', function (file) {
-    let record = this;
-    return field.type.upload(file, field).then(function (img) {
-      record.set(field.path, img);
-      return Promise.resolve();
-    });
-  });
-
-  Model.underscoreMethod(field.path, 'data', function () {
-    let value = this.get(field.path);
-    return value && value.url ? value.url : '';
-  });
-};
-
-/**
- * alaska-admin-view 前端控件初始化参数
- * @param field
- * @param Model
- */
-exports.viewOptions = function (field, Model) {
-  let options = alaska.Field.viewOptions.apply(this, arguments);
-  options.multi = field.multi;
-  options.allowed = field.allowed;
-  return options;
-};
+ImageField.viewOptions = ['multi', 'allowed'];
 
 /**
  * 上传
@@ -114,7 +101,7 @@ exports.viewOptions = function (field, Model) {
  * @param {Field} field
  * @returns {{}}
  */
-exports.upload = function (file, field) {
+ImageField.upload = function (file, field) {
   return new Promise(function (resolve, reject) {
     if (!file) {
       return reject(new Error('File not found'));
@@ -213,3 +200,5 @@ exports.upload = function (file, field) {
     }
   });
 };
+
+module.exports = ImageField;

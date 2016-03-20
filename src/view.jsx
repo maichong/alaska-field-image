@@ -72,6 +72,9 @@ export default class ImageFieldView extends React.Component {
         newState.max = 1;
       }
     }
+    if (nextProps.errorText !== undefined) {
+      newState.errorText = nextProps.errorText;
+    }
     this.setState(newState);
   }
 
@@ -183,7 +186,7 @@ export default class ImageFieldView extends React.Component {
         marginBottom: 5
       },
       error: {
-        color: muiTheme.baseTheme.palette.accent1Color,
+        color: muiTheme.textField.errorColor,
         fontSize: 12
       }
     };
@@ -234,7 +237,7 @@ export default class ImageFieldView extends React.Component {
       </div>);
     }
 
-    let errorLabel = errorText ? <p style={styles.error}>{errorText}</p> : null;
+    let errorLabel = errorText ? <div style={styles.error}>{errorText}</div> : null;
     return (
       <div style={styles.root}>
         <label style={styles.label}>{field.label}</label>
