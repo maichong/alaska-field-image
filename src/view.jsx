@@ -5,77 +5,37 @@
  */
 
 import React from 'react';
-import ContextPure from 'material-ui/lib/mixins/context-pure';
-import FlatButton from 'material-ui/lib/flat-button';
-import FontIcon from 'material-ui/lib/font-icon';
 import * as _ from 'lodash';
 import { shallowEqual } from 'alaska-admin-view';
 import { api } from 'alaska-admin-view';
 import { stringify } from 'qs';
+import { Button } from 'react-bootstrap';
 
+import '../style.less';
 
 export default class ImageFieldView extends React.Component {
 
-  static propTypes = {
-    children: React.PropTypes.node
-  };
-
   static contextTypes = {
-    muiTheme: React.PropTypes.object,
-    views: React.PropTypes.object,
-    settings: React.PropTypes.object,
+    settings: React.PropTypes.object
   };
 
-  static childContextTypes = {
-    muiTheme: React.PropTypes.object,
-    views: React.PropTypes.object,
-    settings: React.PropTypes.object,
-  };
-
-  static mixins = [
-    ContextPure
-  ];
-
-  constructor(props, context) {
+  constructor(props) {
     super(props);
-    this.handleAddImage = this.handleAddImage.bind(this);
     this.state = {
-      muiTheme: context.muiTheme,
-      views: context.views,
-      settings: context.settings,
-      max: props.field.max || 1000
+      max: props.field.max || 1000,
+      errorText: ''
     };
     if (!props.field.multi) {
       this.state.max = 1;
     }
   }
 
-  getChildContext() {
-    return {
-      muiTheme: this.state.muiTheme,
-      views: this.context.views,
-      settings: this.context.settings,
-    };
-  }
-
   componentWillReceiveProps(nextProps, nextContext) {
     let newState = {};
-    if (nextContext.muiTheme) {
-      newState.muiTheme = nextContext.muiTheme;
-    }
-    if (nextContext.views) {
-      newState.views = nextContext.views;
-    }
-    if (nextProps.field) {
-      newState.max = nextProps.field.max || 1000;
-      if (!nextProps.field.multi) {
-        newState.max = 1;
-      }
-    }
     if (nextProps.errorText !== undefined) {
       newState.errorText = nextProps.errorText;
+      this.setState(newState);
     }
-    this.setState(newState);
   }
 
   handleRemoveItem(item) {
@@ -83,16 +43,16 @@ export default class ImageFieldView extends React.Component {
     let value = null;
     if (multi) {
       value = [];
-      _.each(this.props.value, i=> {
+      _.each(this.props.value, i => {
         if (i != item) {
           value.push(i);
         }
       });
     }
     this.props.onChange && this.props.onChange(value);
-  }
+  };
 
-  handleAddImage() {
+  handleAddImage = () => {
     let me = this;
     let { model, field, data, value} = this.props;
     let multi = field.multi;
@@ -105,7 +65,7 @@ export default class ImageFieldView extends React.Component {
     } else {
       value = [];
     }
-    let url = this.state.settings.services['alaska-admin'].prefix + '/api/upload?' + stringify({
+    let url = this.context.settings.services['alaska-admin'].prefix + '/api/upload?' + stringify({
         service: model.service.id,
         model: model.name
       });
@@ -133,65 +93,7 @@ export default class ImageFieldView extends React.Component {
       });
     });
     this.setState(nextState);
-  }
-
-  getStyles() {
-    let muiTheme = this.state.muiTheme;
-    let styles = {
-      root: {
-        marginTop: 14
-      },
-      label: {
-        display: 'block',
-        lineHeight: '22px',
-        marginBottom: 5,
-        fontSize: 12,
-        color: '#999',
-      },
-      list: {},
-      item: {
-        position: 'relative',
-        display: 'inline-block',
-        cursor: 'pointer',
-        marginRight: 10,
-        marginBottom: 10,
-        verticalAlign: 'top',
-        minHeight: 88
-      },
-      icon: {
-        position: 'absolute',
-        fontSize: 84,
-        width: 84,
-        height: 84,
-        minHeight: 84,
-        top: 0,
-        bottom: 0,
-        right: 0,
-        left: 0,
-        color: '#999',
-        border: 'dashed 2px #999'
-      },
-      input: {
-        display: 'block',
-        cursor: 'pointer',
-        position: 'absolute',
-        height: 88,
-        width: 88,
-        zIndex: 2,
-        opacity: 0
-      },
-      img: {
-        display: 'block',
-        height: 88,
-        marginBottom: 5
-      },
-      error: {
-        color: muiTheme.textField.errorColor,
-        fontSize: 12
-      }
-    };
-    return styles;
-  }
+  };
 
   shouldComponentUpdate(props, state) {
     return !shallowEqual(props, this.props, 'data', 'onChange', 'model') || !shallowEqual(state, this.state);
@@ -200,20 +102,19 @@ export default class ImageFieldView extends React.Component {
   render() {
     let { field, value, disabled } = this.props;
     let { errorText, max } = this.state;
-    let styles = this.getStyles();
     if (!field.multi) {
       value = value ? [value] : [];
     }
     let items = [];
     _.each(value, (item, index)=> {
-      items.push(<div style={styles.item} key={index}>
-        <img src={item.thumbUrl} style={styles.img}/>
-        <FlatButton
-          label="删除"
+      items.push(<div key={index} className="image-field-item">
+        <img src={item.thumbUrl}/>
+        <Button
           disabled={disabled}
-          onTouchTap={this.handleRemoveItem.bind(this,item)}
-          style={{width: '100%'}}
-        />
+          onClick={this.handleRemoveItem.bind(this,item)}
+          bsStyle="link"
+          block
+        >删除</Button>
       </div>);
     });
     if (items.length < max) {
@@ -225,24 +126,25 @@ export default class ImageFieldView extends React.Component {
             ref="imageInput"
             multiple={this.state.multi}
             accept="image/png;image/jpg;"
-            style={styles.input}
             type="file"
             onChange={this.handleAddImage}
           />;
       }
 
-      items.push(<div style={styles.item} key="add">
-        <FontIcon className="material-icons" style={styles.icon}>add</FontIcon>
+      items.push(<div className="image-field-item image-field-add" key="add">
+        <i className="fa fa-plus-square-o"/>
         {input}
       </div>);
     }
 
-    let errorLabel = errorText ? <div style={styles.error}>{errorText}</div> : null;
+    let errorLabel = errorText ? <p className="help-block text-danger">{errorText}</p> : null;
     return (
-      <div style={styles.root}>
-        <label style={styles.label}>{field.label}</label>
-        {items}
-        {errorLabel}
+      <div className="form-group image-field">
+        <label className="control-label col-xs-2">{field.label}</label>
+        <div className="col-xs-10">
+          {items}
+          {errorLabel}
+        </div>
       </div>
     );
   }
