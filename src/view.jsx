@@ -137,13 +137,19 @@ export default class ImageFieldView extends React.Component {
       </div>);
     }
 
-    let errorLabel = errorText ? <p className="help-block text-danger">{errorText}</p> : null;
+    let help = field.help;
+    let className = 'form-group image-field';
+    if (errorText) {
+      className += ' has-error';
+      help = errorText;
+    }
+    let helpElement = help ? <p className="help-block">{help}</p> : null;
     return (
-      <div className="form-group image-field">
+      <div className={className}>
         <label className="control-label col-xs-2">{field.label}</label>
         <div className="col-xs-10">
           {items}
-          {errorLabel}
+          {helpElement}
         </div>
       </div>
     );
