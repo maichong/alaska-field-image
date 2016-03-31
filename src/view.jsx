@@ -16,7 +16,8 @@ import '../style.less';
 export default class ImageFieldView extends React.Component {
 
   static contextTypes = {
-    settings: React.PropTypes.object
+    settings: React.PropTypes.object,
+    t: React.PropTypes.func
   };
 
   constructor(props) {
@@ -54,6 +55,7 @@ export default class ImageFieldView extends React.Component {
 
   handleAddImage = () => {
     let me = this;
+    const t = this.context.t;
     let { model, field, data, value} = this.props;
     let multi = field.multi;
     if (value) {
@@ -78,7 +80,7 @@ export default class ImageFieldView extends React.Component {
       }
       let matchs = file.name.match(/\.(\w+)$/);
       if (!matchs || !matchs[1] || field.allowed.indexOf(matchs[1].replace('jpeg', 'jpg').toLowerCase()) < 0) {
-        nextState.errorText = '图片格式不允许';
+        nextState.errorText = t('Invalid image format');
         return;
       }
       api.post(url, {
