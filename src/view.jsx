@@ -5,15 +5,24 @@
  */
 
 import React from 'react';
-import * as _ from 'lodash';
+import _forEach from 'lodash/forEach';
 import { shallowEqual } from 'alaska-admin-view';
 import { api } from 'alaska-admin-view';
 import { stringify } from 'qs';
-import { Button } from 'react-bootstrap';
 
 import '../style.less';
 
 export default class ImageFieldView extends React.Component {
+
+  static propTypes = {
+    model: React.PropTypes.object,
+    field: React.PropTypes.object,
+    data: React.PropTypes.object,
+    errorText: React.PropTypes.string,
+    disabled: React.PropTypes.bool,
+    value: React.PropTypes.any,
+    onChange: React.PropTypes.func,
+  };
 
   static contextTypes = {
     settings: React.PropTypes.object,
@@ -44,7 +53,7 @@ export default class ImageFieldView extends React.Component {
     let value = null;
     if (multi) {
       value = [];
-      _.each(this.props.value, i => {
+      _forEach(this.props.value, i => {
         if (i != item) {
           value.push(i);
         }
@@ -74,7 +83,7 @@ export default class ImageFieldView extends React.Component {
     let nextState = {
       errorText: ''
     };
-    _.each(this.refs.imageInput.files, file => {
+    _forEach(this.refs.imageInput.files, file => {
       if (value.length >= me.state.max || !file) {
         return;
       }
@@ -108,34 +117,37 @@ export default class ImageFieldView extends React.Component {
       value = value ? [value] : [];
     }
     let items = [];
-    _.each(value, (item, index)=> {
+    let readonly = disabled || field.static;
+    _forEach(value, (item, index)=> {
       items.push(<div key={index} className="image-field-item">
         <img src={item.thumbUrl}/>
-        <Button
+        {readonly ? null : <button
+          className="btn btn-link btn-block"
           disabled={disabled}
           onClick={this.handleRemoveItem.bind(this,item)}
-          bsStyle="link"
-          block
-        >删除</Button>
+        >删除
+        </button>}
       </div>);
     });
     if (items.length < max) {
       //还未超出
-      let input;
-      if (!disabled) {
-        input =
+      if (!readonly) {
+        items.push(<div className="image-field-item image-field-add" key="add">
+          <i className="fa fa-plus-square-o"/>
           <input
             ref="imageInput"
             multiple={this.state.multi}
             accept="image/png;image/jpg;"
             type="file"
             onChange={this.handleAddImage}
-          />;
+          />
+        </div>);
       }
+    }
 
+    if (!items.length && readonly) {
       items.push(<div className="image-field-item image-field-add" key="add">
-        <i className="fa fa-plus-square-o"/>
-        {input}
+        <i className="fa fa-picture-o"/>
       </div>);
     }
 
@@ -146,10 +158,26 @@ export default class ImageFieldView extends React.Component {
       help = errorText;
     }
     let helpElement = help ? <p className="help-block">{help}</p> : null;
+
+    let label = field.nolabel ? '' : field.label;
+
+    if (field.fullWidth) {
+      let labelElement = label ? (
+        <label className="control-label">{label}</label>
+      ) : null;
+      return (
+        <div className={className}>
+          {labelElement}
+          <div>{items}</div>
+          {helpElement}
+        </div>
+      );
+    }
+
     return (
       <div className={className}>
-        <label className="control-label col-xs-2">{field.label}</label>
-        <div className="col-xs-10">
+        <label className="col-sm-2 control-label">{label}</label>
+        <div className="col-sm-10">
           {items}
           {helpElement}
         </div>
