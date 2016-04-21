@@ -161,7 +161,7 @@ export default class ImageFieldView extends React.Component {
 
     let label = field.nolabel ? '' : field.label;
 
-    if (field.fullWidth) {
+    if (field.horizontal === false) {
       let labelElement = label ? (
         <label className="control-label">{label}</label>
       ) : null;
