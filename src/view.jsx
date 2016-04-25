@@ -84,9 +84,7 @@ export default class ImageFieldView extends React.Component {
       errorText: ''
     };
     _forEach(this.refs.imageInput.files, file => {
-      if (value.length >= me.state.max || !file) {
-        return;
-      }
+      if (value.length >= me.state.max || !file) return;
       let matchs = file.name.match(/\.(\w+)$/);
       if (!matchs || !matchs[1] || field.allowed.indexOf(matchs[1].replace('jpeg', 'jpg').toLowerCase()) < 0) {
         nextState.errorText = t('Invalid image format');
@@ -118,7 +116,7 @@ export default class ImageFieldView extends React.Component {
     }
     let items = [];
     let readonly = disabled || field.static;
-    _forEach(value, (item, index)=> {
+    _forEach(value, (item, index) => {
       items.push(<div key={index} className="image-field-item">
         <img src={item.thumbUrl}/>
         {readonly ? null : <button
