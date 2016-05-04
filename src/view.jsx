@@ -76,9 +76,19 @@ export default class ImageFieldView extends React.Component {
     } else {
       value = [];
     }
+    let serviceId = 'alaska-user';
+    let modelName = 'User';
+    let id = '_new';
+    if (model) {
+      serviceId = model.service.id;
+      modelName = model.name;
+    }
+    if (data && data._id) {
+      id = data._id;
+    }
     let url = this.context.settings.services['alaska-admin'].prefix + '/api/upload?' + stringify({
-        service: model.service.id,
-        model: model.name
+        service: serviceId,
+        model: modelName
       });
     let nextState = {
       errorText: ''
@@ -86,13 +96,13 @@ export default class ImageFieldView extends React.Component {
     _forEach(this.refs.imageInput.files, file => {
       if (value.length >= me.state.max || !file) return;
       let matchs = file.name.match(/\.(\w+)$/);
-      if (!matchs || !matchs[1] || field.allowed.indexOf(matchs[1].replace('jpeg', 'jpg').toLowerCase()) < 0) {
+      if (!matchs || !matchs[1] || (field.allowed || ['jpg', 'png']).indexOf(matchs[1].replace('jpeg', 'jpg').toLowerCase()) < 0) {
         nextState.errorText = t('Invalid image format');
         return;
       }
       api.post(url, {
-        id: data._id == '_new' ? '' : data._id,
-        path: field.path,
+        id,
+        path: field.path || 'avatar',
         file: file
       }).then(function (res) {
         value.push(res);

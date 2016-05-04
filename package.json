@@ -1,7 +1,11 @@
 {
   "name": "alaska-field-image",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "Alaska image field",
+  "keywords": [
+    "alaska",
+    "alaska-field"
+  ],
   "main": "index.js",
   "scripts": {
     "build": "babel ./src --out-dir ./lib",
