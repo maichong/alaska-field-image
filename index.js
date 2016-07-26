@@ -86,11 +86,11 @@ class ImageField extends alaska.Field {
 ImageField.views = {
   cell: {
     name: 'ImageFieldCell',
-    field: __dirname + '/lib/cell.js'
+    path: __dirname + '/lib/cell.js'
   },
   view: {
     name: 'ImageFieldView',
-    field: __dirname + '/lib/view.js'
+    path: __dirname + '/lib/view.js'
   }
 };
 
