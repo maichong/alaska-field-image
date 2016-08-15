@@ -12,21 +12,23 @@ import { stringify } from 'qs';
 
 import '../style.less';
 
+const { bool, object, any, func, string } = React.PropTypes;
+
 export default class ImageFieldView extends React.Component {
 
   static propTypes = {
-    model: React.PropTypes.object,
-    field: React.PropTypes.object,
-    data: React.PropTypes.object,
-    errorText: React.PropTypes.string,
-    disabled: React.PropTypes.bool,
-    value: React.PropTypes.any,
-    onChange: React.PropTypes.func,
+    model: object,
+    field: object,
+    data: object,
+    errorText: string,
+    disabled: bool,
+    value: any,
+    onChange: func,
   };
 
   static contextTypes = {
-    settings: React.PropTypes.object,
-    t: React.PropTypes.func
+    settings: object,
+    t: func
   };
 
   constructor(props) {
